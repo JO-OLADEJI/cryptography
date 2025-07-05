@@ -3,10 +3,10 @@
 use std::fmt;
 use std::ops;
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct FieldElement {
-    num: u32,
-    prime: u32,
+    pub num: u32,
+    pub prime: u32,
 }
 
 impl FieldElement {
@@ -37,7 +37,7 @@ impl FieldElement {
 
 impl fmt::Display for FieldElement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "FieldElement_{}({})", self.prime, self.num)
+        write!(f, "FieldElement_ₚ{}({})", self.prime, self.num)
     }
 }
 
