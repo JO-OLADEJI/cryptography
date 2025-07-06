@@ -77,6 +77,22 @@ impl Point {
             },
         }
     }
+
+    pub fn scalar_mul(self, by: u32) -> Self {
+        // let mut product =
+        let mut product = self;
+
+        if by == 0 {
+            return Point::new(self.a, self.b, None, None).unwrap();
+        } else if by > 1 {
+            // TODO: make this more efficient using "binary expansion"
+            for _ in 0..(by - 1) {
+                product = (product + self).unwrap();
+            }
+        }
+
+        product
+    }
 }
 
 impl ops::Add for Point {
@@ -168,6 +184,14 @@ impl ops::Add for Point {
          * y₃ = s(x₁ - x₃) - y₁
          */
         else {
+            /*
+             * Case 3 (variant) - if the two `x` points are equivalent and `y` points are negated, i.e point_a.x == point_b.x && point_a.y == -(point_b.y)
+             * This results in the infinity point
+             */
+            if self.x == point_2.x && (y1_value.num + y2_value.num) == self.a.prime {
+                return Ok(Point::new(self.a, self.b, None, None).unwrap());
+            }
+
             slope = ((y2_value - y1_value).unwrap() / (x2_value - x1_value).unwrap()).unwrap();
         }
 
@@ -384,6 +408,44 @@ mod ecc_tests {
                 x: Some(FieldElement::new(4, ORDER).unwrap()),
                 y: Some(FieldElement::new(6, ORDER).unwrap()),
             })
+        );
+    }
+
+    #[test]
+    fn test_point_addition_identity_variation() {
+        let x1 = FieldElement::new(1, ORDER).unwrap();
+        let y1 = FieldElement::new(6, ORDER).unwrap();
+        let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x1), Some(y1)).unwrap();
+
+        let x2 = FieldElement::new(1, ORDER).unwrap();
+        let y2 = FieldElement::new(1, ORDER).unwrap();
+        let point_b = Point::new(SECP256K1_A, SECP256K1_B, Some(x2), Some(y2)).unwrap();
+
+        assert_eq!(
+            point_a + point_b,
+            Ok(Point {
+                a: SECP256K1_A,
+                b: SECP256K1_B,
+                x: None,
+                y: None,
+            })
+        );
+    }
+
+    #[test]
+    fn test_scalar_multiplication() {
+        let x = FieldElement::new(1, ORDER).unwrap();
+        let y = FieldElement::new(6, ORDER).unwrap();
+        let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)).unwrap();
+
+        assert_eq!(
+            point_a.scalar_mul(5),
+            Point {
+                a: SECP256K1_A,
+                b: SECP256K1_B,
+                x: Some(FieldElement::new(2, ORDER).unwrap()),
+                y: Some(FieldElement::new(1, ORDER).unwrap()),
+            }
         );
     }
 }
