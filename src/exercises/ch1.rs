@@ -1,5 +1,10 @@
-// Chapter 1: Finite Fields
 // Book: Programming Bitcoin: Learn How to Program Bitcoin from Scratch by Jimmy song
+// Chapter 1: Finite Fields
+//  ____  ____  _  _  ____  ____  ____      ____  ____  ____  __    ____   ___
+// ( ___)(_  _)( \( )(_  _)(_  _)( ___)    ( ___)(_  _)( ___)(  )  (  _ \ / __)
+// )__)  _)(_  )  (  _)(_   )(   )__)      )__)  _)(_  )__)  )(__  )(_) )\__ \
+// (__)  (____)(_)\_)(____) (__) (____)    (__)  (____)(____)(____)(____/ (___/
+
 use std::fmt;
 use std::ops;
 
@@ -29,7 +34,24 @@ impl FieldElement {
         }
 
         Self {
-            num: (self.num.pow(exponent)) % self.prime,
+            num: num,
+            prime: self.prime,
+        }
+    }
+
+    pub fn scalar_mul(self, by: u32) -> Self {
+        let mut num: u32 = self.num;
+
+        if by == 0 {
+            num = 0;
+        } else if by > 1 {
+            for _ in 0..(by - 1) {
+                num = (num + self.num) % self.prime;
+            }
+        }
+
+        Self {
+            num: num,
             prime: self.prime,
         }
     }
@@ -112,7 +134,7 @@ impl ops::Div for FieldElement {
 }
 
 #[cfg(test)]
-mod tests {
+mod ff_tests {
     use super::*;
 
     const PRIME: u32 = 7;
@@ -210,6 +232,19 @@ mod tests {
                 num: 1,
                 prime: PRIME
             })
+        );
+    }
+
+    #[test]
+    fn test_field_element_scalar_multiplication() {
+        let a = FieldElement::new(3, PRIME).unwrap();
+
+        assert_eq!(
+            a.scalar_mul(12),
+            FieldElement {
+                num: 1,
+                prime: PRIME
+            }
         );
     }
 
