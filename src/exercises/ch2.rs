@@ -19,10 +19,10 @@ use std::ops;
  */
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Point {
-    a: FieldElement,
-    b: FieldElement,
-    x: Option<FieldElement>,
-    y: Option<FieldElement>,
+    pub a: FieldElement,
+    pub b: FieldElement,
+    pub x: Option<FieldElement>,
+    pub y: Option<FieldElement>,
 }
 
 impl Point {
@@ -35,9 +35,9 @@ impl Point {
         match _x {
             Some(x_value) => match _y {
                 Some(y_value) => {
-                    if _a.prime != _b.prime
-                        || _b.prime != x_value.prime
-                        || x_value.prime != y_value.prime
+                    if _a.modulus != _b.modulus
+                        || _b.modulus != x_value.modulus
+                        || x_value.modulus != y_value.modulus
                     {
                         return Err(format!("Cannot operate on different Fields"));
                     }
@@ -79,7 +79,6 @@ impl Point {
     }
 
     pub fn scalar_mul(self, by: u32) -> Self {
-        // let mut product =
         let mut product = self;
 
         if by == 0 {
@@ -119,8 +118,8 @@ impl ops::Add for Point {
                 point_2.x,
                 Some(
                     FieldElement::new(
-                        self.a.prime - point_2.y.unwrap().num, // flip `y` on x-axis
-                        self.a.prime,
+                        self.a.modulus - point_2.y.unwrap().num, // flip `y` on x-axis
+                        self.a.modulus,
                     )
                     .unwrap(),
                 ),
@@ -142,8 +141,8 @@ impl ops::Add for Point {
                 self.x,
                 Some(
                     FieldElement::new(
-                        self.a.prime - self.y.unwrap().num, // flip `y` on x-axis
-                        self.a.prime,
+                        self.a.modulus - self.y.unwrap().num, // flip `y` on x-axis
+                        self.a.modulus,
                     )
                     .unwrap(),
                 ),
@@ -188,7 +187,7 @@ impl ops::Add for Point {
              * Case 3 (variant) - if the two `x` points are equivalent and `y` points are negated, i.e point_a.x == point_b.x && point_a.y == -(point_b.y)
              * This results in the infinity point
              */
-            if self.x == point_2.x && (y1_value.num + y2_value.num) == self.a.prime {
+            if self.x == point_2.x && (y1_value.num + y2_value.num) == self.a.modulus {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
@@ -228,11 +227,11 @@ mod ecc_tests {
 
     const SECP256K1_A: FieldElement = FieldElement {
         num: 0,
-        prime: ORDER,
+        modulus: ORDER,
     };
     const SECP256K1_B: FieldElement = FieldElement {
         num: 7 % ORDER,
-        prime: ORDER,
+        modulus: ORDER,
     };
 
     #[test]

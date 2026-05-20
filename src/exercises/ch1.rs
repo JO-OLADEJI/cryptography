@@ -11,18 +11,18 @@ use std::ops;
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct FieldElement {
     pub num: u32,
-    pub prime: u32,
+    pub modulus: u32,
 }
 
 impl FieldElement {
-    pub fn new(_num: u32, _prime: u32) -> Result<Self, String> {
-        if _num >= _prime {
-            return Err(format!("Num {} not in field range 0 to {}", _num, _prime,));
+    pub fn new(_num: u32, _modulus: u32) -> Result<Self, String> {
+        if _num >= _modulus {
+            return Err(format!("Num {} not in field range 0 to {}", _num, _modulus,));
         }
 
         Ok(Self {
             num: _num,
-            prime: _prime,
+            modulus: _modulus,
         })
     }
 
@@ -30,12 +30,12 @@ impl FieldElement {
         let mut num: u32 = self.num;
 
         for _ in 0..(exponent - 1) {
-            num = (num * self.num) % self.prime;
+            num = (num * self.num) % self.modulus;
         }
 
         Self {
             num: num,
-            prime: self.prime,
+            modulus: self.modulus,
         }
     }
 
@@ -46,20 +46,20 @@ impl FieldElement {
             num = 0;
         } else if by > 1 {
             for _ in 0..(by - 1) {
-                num = (num + self.num) % self.prime;
+                num = (num + self.num) % self.modulus;
             }
         }
 
         Self {
             num: num,
-            prime: self.prime,
+            modulus: self.modulus,
         }
     }
 }
 
 impl fmt::Display for FieldElement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "FieldElement_ₚ{}({})", self.prime, self.num)
+        write!(f, "FieldElement_ₚ{}({})", self.modulus, self.num)
     }
 }
 
@@ -67,13 +67,13 @@ impl ops::Add for FieldElement {
     type Output = Result<Self, String>;
 
     fn add(self, other: Self) -> Self::Output {
-        if self.prime != other.prime {
+        if self.modulus != other.modulus {
             return Err(format!("Cannot add two numbers in different Fields"));
         }
 
         Ok(Self {
-            num: (self.num + other.num) % self.prime,
-            prime: self.prime,
+            num: (self.num + other.num) % self.modulus,
+            modulus: self.modulus,
         })
     }
 }
@@ -82,20 +82,20 @@ impl ops::Sub for FieldElement {
     type Output = Result<Self, String>;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        if self.prime != rhs.prime {
+        if self.modulus != rhs.modulus {
             return Err(format!("Cannot subtract two numbers in different Fields"));
         }
         let mut result: u32 = 0;
 
         if self.num > rhs.num {
-            result = (self.num - rhs.num) % self.prime;
+            result = (self.num - rhs.num) % self.modulus;
         } else if self.num < rhs.num {
-            result = self.prime - (rhs.num - self.num);
+            result = self.modulus - (rhs.num - self.num);
         }
 
         Ok(Self {
             num: result,
-            prime: self.prime,
+            modulus: self.modulus,
         })
     }
 }
@@ -104,13 +104,13 @@ impl ops::Mul for FieldElement {
     type Output = Result<Self, String>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        if self.prime != rhs.prime {
+        if self.modulus != rhs.modulus {
             return Err(format!("Cannot multiply two numbers in different Fields"));
         }
 
         Ok(Self {
-            num: (self.num * rhs.num) % self.prime,
-            prime: self.prime,
+            num: (self.num * rhs.num) % self.modulus,
+            modulus: self.modulus,
         })
     }
 }
@@ -119,7 +119,7 @@ impl ops::Div for FieldElement {
     type Output = Result<Self, String>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if self.prime != rhs.prime {
+        if self.modulus != rhs.modulus {
             return Err(format!("Cannot divide two numbers in different Fields"));
         }
 
@@ -127,7 +127,7 @@ impl ops::Div for FieldElement {
             return Err(format!("Cannot divide a Field element by zero"));
         }
 
-        let rhs_inverse = rhs.pow(self.prime - 2);
+        let rhs_inverse = rhs.pow(self.modulus - 2);
 
         self * rhs_inverse
     }
@@ -156,7 +156,10 @@ mod ff_tests {
 
         assert_eq!(
             FieldElement::new(num, PRIME),
-            Ok(FieldElement { num, prime: PRIME })
+            Ok(FieldElement {
+                num,
+                modulus: PRIME
+            })
         );
     }
 
@@ -180,7 +183,7 @@ mod ff_tests {
             a + b,
             Ok(FieldElement {
                 num: 1,
-                prime: PRIME
+                modulus: PRIME
             })
         );
     }
@@ -205,7 +208,7 @@ mod ff_tests {
             a - b,
             Ok(FieldElement {
                 num: 5,
-                prime: PRIME
+                modulus: PRIME
             })
         );
     }
@@ -230,7 +233,7 @@ mod ff_tests {
             a * b,
             Ok(FieldElement {
                 num: 1,
-                prime: PRIME
+                modulus: PRIME
             })
         );
     }
@@ -243,7 +246,7 @@ mod ff_tests {
             a.scalar_mul(12),
             FieldElement {
                 num: 1,
-                prime: PRIME
+                modulus: PRIME
             }
         );
     }
@@ -257,7 +260,7 @@ mod ff_tests {
             a.pow(exponent),
             FieldElement {
                 num: 4,
-                prime: PRIME
+                modulus: PRIME
             }
         );
     }
@@ -290,7 +293,7 @@ mod ff_tests {
             a / b,
             Ok(FieldElement {
                 num: 2,
-                prime: PRIME
+                modulus: PRIME
             })
         );
     }
