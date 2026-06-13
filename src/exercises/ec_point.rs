@@ -6,7 +6,7 @@
 // )__)  )(__  )(__  _)(_  )___/  )(   _)(_ ( (__      ( (__  )(__)(  )   / \  /  )__) \__ \
 // (____)(____)(____)(____)(__)   (__) (____) \___)      \___)(______)(_)\_)  \/  (____)(___/
 
-use crate::exercises::ch1::FieldElement;
+use crate::exercises::finite_field::FieldElement;
 use std::fmt;
 use std::ops;
 
@@ -44,9 +44,9 @@ impl Point {
 
                     let lhs = y_value.pow(2);
                     let rhs_0 = x_value.pow(3);
-                    let rhs_1 = (_a * x_value).unwrap();
-                    let rhs_01 = (rhs_0 + rhs_1).unwrap();
-                    let rhs = (rhs_01 + _b).unwrap();
+                    let rhs_1 = _a * x_value;
+                    let rhs_01 = rhs_0 + rhs_1;
+                    let rhs = rhs_01 + _b;
 
                     if lhs != rhs {
                         return Err(format!(
@@ -78,6 +78,7 @@ impl Point {
         }
     }
 
+    #[allow(dead_code)]
     pub fn scalar_mul(self, by: u32) -> Self {
         let mut product = self;
 
@@ -118,7 +119,7 @@ impl ops::Add for Point {
                 point_2.x,
                 Some(
                     FieldElement::new(
-                        self.a.modulus - point_2.y.unwrap().num, // flip `y` on x-axis
+                        (self.a.modulus - point_2.y.unwrap().num) as i64, // flip `y` on x-axis
                         self.a.modulus,
                     )
                     .unwrap(),
@@ -141,7 +142,7 @@ impl ops::Add for Point {
                 self.x,
                 Some(
                     FieldElement::new(
-                        self.a.modulus - self.y.unwrap().num, // flip `y` on x-axis
+                        (self.a.modulus - self.y.unwrap().num) as i64, // flip `y` on x-axis
                         self.a.modulus,
                     )
                     .unwrap(),
@@ -170,8 +171,7 @@ impl ops::Add for Point {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
-            slope = ((x1_value.pow(2).scalar_mul(3) + self.a).unwrap() / y1_value.scalar_mul(2))
-                .unwrap();
+            slope = (x1_value.pow(2).scalar_mul(3) + self.a) / y1_value.scalar_mul(2);
         }
         /*
          * Case 3 (base case): distinct points where P₁ != P₂
@@ -191,11 +191,11 @@ impl ops::Add for Point {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
-            slope = ((y2_value - y1_value).unwrap() / (x2_value - x1_value).unwrap()).unwrap();
+            slope = (y2_value - y1_value) / (x2_value - x1_value);
         }
 
-        let point_3_x = ((slope.pow(2) - x1_value).unwrap() - x2_value).unwrap();
-        let point_3_y = ((slope * (x1_value - point_3_x).unwrap()).unwrap() - y1_value).unwrap();
+        let point_3_x = (slope.pow(2) - x1_value) - x2_value;
+        let point_3_y = (slope * (x1_value - point_3_x)) - y1_value;
 
         Ok(Point::new(self.a, self.b, Some(point_3_x), Some(point_3_y)).unwrap())
     }
@@ -329,6 +329,8 @@ mod ecc_tests {
         let x = FieldElement::new(1, ORDER).unwrap();
         let y = FieldElement::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)).unwrap();
+
+        println!("{:?}", point_a + point_a);
 
         assert_eq!(
             point_a + point_a,

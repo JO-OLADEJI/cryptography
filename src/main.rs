@@ -1,28 +1,27 @@
-use crate::exercises::{ch1::FieldElement, ch2::Point};
-
 mod exercises;
-
-const MODULUS: u32 = 43;
+mod extension_fields;
 
 fn main() {
-    let secp256k1_a = FieldElement::new(0, MODULUS).unwrap();
-    let secp256k1_b = FieldElement::new(7, MODULUS).unwrap();
+    // let a = FieldElement::new(2, MODULUS).unwrap();
+    // let b = FieldElement::new(3, MODULUS).unwrap();
 
-    // • (42, 7)
-    let point_a = Point::new(
-        secp256k1_a,
-        secp256k1_b,
-        Some(FieldElement::new(42, MODULUS).unwrap()),
-        Some(FieldElement::new(7, MODULUS).unwrap()),
-    )
-    .unwrap();
+    extension_fields::compute::main();
 
-    for i in 1..=57 {
-        let point: Point = point_a.scalar_mul(i);
-        println!("{} => {}", i, &point);
+    // • (3, 6)
+    // let potential_g = Point::new(
+    //     a,
+    //     b,
+    //     Some(FieldElement::new(3, MODULUS).unwrap()),
+    //     Some(FieldElement::new(6, MODULUS).unwrap()),
+    // )
+    // .unwrap();
 
-        if point.x.is_none() && point.y.is_none() {
-            break;
-        }
-    }
+    // for i in 1..=MODULUS {
+    //     let point: Point = potential_g.scalar_mul(i);
+    //     println!("{} => {}", i, &point);
+
+    //     if point.x.is_none() && point.y.is_none() {
+    //         break;
+    //     }
+    // }
 }

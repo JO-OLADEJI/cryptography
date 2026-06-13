@@ -15,13 +15,17 @@ pub struct FieldElement {
 }
 
 impl FieldElement {
-    pub fn new(_num: u32, _modulus: u32) -> Result<Self, String> {
-        if _num >= _modulus {
-            return Err(format!("Num {} not in field range 0 to {}", _num, _modulus,));
+    pub fn new(_num: i64, _modulus: u32) -> Result<Self, String> {
+        // TODO: handle `_modulus` errors
+        if _modulus == 0 {
+            return Err(format!("cannot define a finite field over modulus ZERO"));
         }
 
+        let m = _modulus as i64;
+        let element = ((_num % m + m) % m) as u32;
+
         Ok(Self {
-            num: _num,
+            num: element as u32,
             modulus: _modulus,
         })
     }
@@ -55,6 +59,56 @@ impl FieldElement {
             modulus: self.modulus,
         }
     }
+
+    pub fn scalar_mul_fe(self, by: &Self) -> Self {
+        self.scalar_mul(by.num)
+    }
+
+    #[allow(dead_code)]
+    pub fn safe_add(self, other: Self) -> Result<Self, String> {
+        if self.modulus != other.modulus {
+            return Err(format!("cannot safely add two numbers in distinct fields"));
+        }
+
+        Ok(self + other)
+    }
+
+    #[allow(dead_code)]
+    pub fn safe_subtract(self, other: Self) -> Result<Self, String> {
+        if self.modulus != other.modulus {
+            return Err(format!(
+                "cannot safely subtract two numbers in distinct fields"
+            ));
+        }
+
+        Ok(self - other)
+    }
+
+    #[allow(dead_code)]
+    pub fn safe_mul(self, other: Self) -> Result<Self, String> {
+        if self.modulus != other.modulus {
+            return Err(format!(
+                "cannot safely multiply two numbers in distinct fields"
+            ));
+        }
+
+        Ok(self * other)
+    }
+
+    #[allow(dead_code)]
+    pub fn safe_div(self, other: Self) -> Result<Self, String> {
+        if self.modulus != other.modulus {
+            return Err(format!(
+                "cannot safely divide two numbers in distinct fields"
+            ));
+        }
+
+        if other.num == 0 {
+            return Err(format!("cannot divide a field element by zero"));
+        }
+
+        Ok(self / other)
+    }
 }
 
 impl fmt::Display for FieldElement {
@@ -64,27 +118,22 @@ impl fmt::Display for FieldElement {
 }
 
 impl ops::Add for FieldElement {
-    type Output = Result<Self, String>;
+    type Output = Self;
 
-    fn add(self, other: Self) -> Self::Output {
-        if self.modulus != other.modulus {
-            return Err(format!("Cannot add two numbers in different Fields"));
-        }
-
-        Ok(Self {
-            num: (self.num + other.num) % self.modulus,
+    // assumes `rhs` has the same MODULUS
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            num: (self.num + rhs.num) % self.modulus,
             modulus: self.modulus,
-        })
+        }
     }
 }
 
 impl ops::Sub for FieldElement {
-    type Output = Result<Self, String>;
+    type Output = Self;
 
+    // assumes `rhs` has the same MODULUS
     fn sub(self, rhs: Self) -> Self::Output {
-        if self.modulus != rhs.modulus {
-            return Err(format!("Cannot subtract two numbers in different Fields"));
-        }
         let mut result: u32 = 0;
 
         if self.num > rhs.num {
@@ -93,40 +142,30 @@ impl ops::Sub for FieldElement {
             result = self.modulus - (rhs.num - self.num);
         }
 
-        Ok(Self {
+        Self {
             num: result,
             modulus: self.modulus,
-        })
+        }
     }
 }
 
 impl ops::Mul for FieldElement {
-    type Output = Result<Self, String>;
+    type Output = Self;
 
+    // assumes `rhs` has the same MODULUS
     fn mul(self, rhs: Self) -> Self::Output {
-        if self.modulus != rhs.modulus {
-            return Err(format!("Cannot multiply two numbers in different Fields"));
-        }
-
-        Ok(Self {
+        Self {
             num: (self.num * rhs.num) % self.modulus,
             modulus: self.modulus,
-        })
+        }
     }
 }
 
 impl ops::Div for FieldElement {
-    type Output = Result<Self, String>;
+    type Output = Self;
 
+    // assumes `rhs` has the same MODULUS & is not ZERO
     fn div(self, rhs: Self) -> Self::Output {
-        if self.modulus != rhs.modulus {
-            return Err(format!("Cannot divide two numbers in different Fields"));
-        }
-
-        if rhs.num == 0 {
-            return Err(format!("Cannot divide a Field element by zero"));
-        }
-
         let rhs_inverse = rhs.pow(self.modulus - 2);
 
         self * rhs_inverse
@@ -137,16 +176,17 @@ impl ops::Div for FieldElement {
 mod ff_tests {
     use super::*;
 
+    const ZERO: u32 = 0;
     const PRIME: u32 = 7;
     const PRIME_2: u32 = 11;
 
     #[test]
     fn test_field_element_init_error() {
-        let num: u32 = PRIME;
+        let num: i64 = PRIME as i64;
 
         assert_eq!(
-            FieldElement::new(num, PRIME),
-            Err(format!("Num {} not in field range 0 to {}", num, PRIME))
+            FieldElement::new(num, ZERO),
+            Err(format!("cannot define a finite field over modulus ZERO"))
         );
     }
 
@@ -155,7 +195,7 @@ mod ff_tests {
         let num: u32 = PRIME - 1;
 
         assert_eq!(
-            FieldElement::new(num, PRIME),
+            FieldElement::new(num as i64, PRIME),
             Ok(FieldElement {
                 num,
                 modulus: PRIME
@@ -169,8 +209,8 @@ mod ff_tests {
         let b = FieldElement::new(5, PRIME_2).unwrap();
 
         assert_eq!(
-            a + b,
-            Err(format!("Cannot add two numbers in different Fields"))
+            a.safe_add(b),
+            Err(format!("cannot safely add two numbers in distinct fields"))
         );
     }
 
@@ -181,10 +221,10 @@ mod ff_tests {
 
         assert_eq!(
             a + b,
-            Ok(FieldElement {
+            FieldElement {
                 num: 1,
                 modulus: PRIME
-            })
+            }
         );
     }
 
@@ -194,8 +234,10 @@ mod ff_tests {
         let b = FieldElement::new(5, PRIME_2).unwrap();
 
         assert_eq!(
-            a - b,
-            Err(format!("Cannot subtract two numbers in different Fields"))
+            a.safe_subtract(b),
+            Err(format!(
+                "cannot safely subtract two numbers in distinct fields"
+            ))
         );
     }
 
@@ -206,10 +248,10 @@ mod ff_tests {
 
         assert_eq!(
             a - b,
-            Ok(FieldElement {
+            FieldElement {
                 num: 5,
                 modulus: PRIME
-            })
+            }
         );
     }
 
@@ -219,8 +261,10 @@ mod ff_tests {
         let b = FieldElement::new(5, PRIME_2).unwrap();
 
         assert_eq!(
-            a * b,
-            Err(format!("Cannot multiply two numbers in different Fields"))
+            a.safe_mul(b),
+            Err(format!(
+                "cannot safely multiply two numbers in distinct fields"
+            ))
         );
     }
 
@@ -231,10 +275,10 @@ mod ff_tests {
 
         assert_eq!(
             a * b,
-            Ok(FieldElement {
+            FieldElement {
                 num: 1,
                 modulus: PRIME
-            })
+            }
         );
     }
 
@@ -271,8 +315,10 @@ mod ff_tests {
         let b = FieldElement::new(5, PRIME_2).unwrap();
 
         assert_eq!(
-            a / b,
-            Err(format!("Cannot divide two numbers in different Fields"))
+            a.safe_div(b),
+            Err(format!(
+                "cannot safely divide two numbers in distinct fields"
+            ))
         );
     }
 
@@ -281,7 +327,10 @@ mod ff_tests {
         let a = FieldElement::new(3, PRIME).unwrap();
         let c = FieldElement::new(0, PRIME).unwrap();
 
-        assert_eq!(a / c, Err(format!("Cannot divide a Field element by zero")));
+        assert_eq!(
+            a.safe_div(c),
+            Err(format!("cannot divide a field element by zero"))
+        );
     }
 
     #[test]
@@ -291,10 +340,10 @@ mod ff_tests {
 
         assert_eq!(
             a / b,
-            Ok(FieldElement {
+            FieldElement {
                 num: 2,
                 modulus: PRIME
-            })
+            }
         );
     }
 }
