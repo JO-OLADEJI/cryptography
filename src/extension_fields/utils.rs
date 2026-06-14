@@ -2,7 +2,7 @@ use std::u32;
 
 use crate::exercises::finite_field::FieldElement;
 
-pub const MODULUS: u32 = 101;
+pub const MODULUS: u32 = 157;
 
 pub const SEARCH_SPACE: (i64, i64) = (-10, 10);
 

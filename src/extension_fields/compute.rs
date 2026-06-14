@@ -1,7 +1,10 @@
+use std::collections::BTreeMap;
+
 use crate::{
     exercises::ec_point::Point,
     extension_fields::{
         sq_root::{has_root, tonelli_shanks},
+        subgroup::embedding_degree,
         utils::{
             format_curve_equation, gf, is_elliptic_curve, prime_factors, MODULUS, SEARCH_SPACE,
         },
@@ -39,18 +42,25 @@ pub fn main() {
                     }
                 }
             }
+            println!("No. of points #E(Fp): {}", no_of_points);
 
             // 2. calculate all prime factors `r` of N(points)
-            let potential_subgroup_orders = prime_factors(no_of_points);
-
-            println!("No. of points #E(Fp): {}", no_of_points);
+            let potential_subgroups_order = prime_factors(no_of_points);
             println!(
                 "Potential subgroups order `r` for G1: {:?}",
-                potential_subgroup_orders
+                potential_subgroups_order
             );
+
+            // 3. for each prime factor, calculate the lowest embedding degree `k` such that `r | (p^k - 1)` (mod p)
+            // in other works the smallest `k` such that p^k === 1 (mod `r`)
+            let mut key: BTreeMap<u32, Option<u32>> = BTreeMap::new();
+
+            for &r in potential_subgroups_order.iter() {
+                key.insert(r, embedding_degree(r));
+            }
+            println!("embedding degrees: {:?}", key);
+
             println!("\n\n\n");
         }
     }
-
-    // 3. for each prime factor, calculate the lowest embedding degree `k` such that `r | (p^k - 1)` (mod p)
 }
