@@ -1,0 +1,19 @@
+modulus | r ------ for k = 2
+101     | 17
+103     | 13
+113     | 19
+137     | 23
+157     | 79 ----- bingo :)
+163     | 41
+193     | 97
+211     | 53
+277     | 139
+283     | 71
+
+
+For MODULUS = 157
+Curve: y² = x³ - 1x - 1
+----------------------------------------------------------
+No. of points #E(Fp): 158
+Potential subgroups order `r` for G1: [2, 79]
+embedding degrees: {2: Some(1), 79: Some(2)}
