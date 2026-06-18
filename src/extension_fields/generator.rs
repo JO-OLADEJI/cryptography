@@ -1,10 +1,10 @@
 use crate::{
-    exercises::ec_point::Point,
-    extension_fields::utils::{gf, MODULUS, SUBGROUP_ORDER_R},
+    exercises::{ec_point::Point, finite_field::Fp},
+    extension_fields::utils::SUBGROUP_ORDER_R,
 };
 
-pub fn find_g1s(points: &Vec<Point>) -> Vec<&Point> {
-    let mut g1s: Vec<&Point> = vec![];
+pub fn find_g1s(points: &Vec<Point<Fp>>) -> Vec<&Point<Fp>> {
+    let mut g1s: Vec<&Point<Fp>> = vec![];
 
     for point in points.iter() {
         let mut order: usize = 1;
@@ -23,27 +23,3 @@ pub fn find_g1s(points: &Vec<Point>) -> Vec<&Point> {
 
     g1s
 }
-
-pub fn get_non_residue() -> Option<u32> {
-    for n in 2..MODULUS {
-        let x = gf(n as i64);
-
-        if x.pow(SUBGROUP_ORDER_R - 1).num == MODULUS - 1 {
-            return Some(n);
-        }
-    }
-
-    None
-}
-
-// pub fn get_non_residue() -> Option<u32> {
-//     for n in 2..157 {
-//         let x = gf(n as i64);
-//         if x.pow(78).num == 156 {
-//             // println!("non-residue = {}", n);
-//             return Some(n);
-//         }
-//     }
-
-//     None
-// }

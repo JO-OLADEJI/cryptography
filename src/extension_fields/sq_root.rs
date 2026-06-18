@@ -1,4 +1,7 @@
-use crate::{exercises::finite_field::Fp, extension_fields::utils::gf};
+use crate::{
+    exercises::{ec_point::Field, finite_field::Fp},
+    extension_fields::utils::gf,
+};
 
 // Tonelli-Shanks algorithm - assumes field has a prime order
 // Returns Some(x) such that x^2 ≡ n (mod p), or None if no solution

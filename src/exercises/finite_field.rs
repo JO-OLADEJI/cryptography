@@ -8,6 +8,9 @@
 use std::fmt;
 use std::ops;
 
+use crate::exercises::ec_point::Field;
+use crate::extension_fields::utils::gf;
+
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Fp {
     pub num: u32,
@@ -28,36 +31,6 @@ impl Fp {
             num: element as u32,
             modulus: _modulus,
         })
-    }
-
-    pub fn pow(self, exponent: u32) -> Self {
-        let mut num: u32 = self.num;
-
-        for _ in 0..(exponent - 1) {
-            num = (num * self.num) % self.modulus;
-        }
-
-        Self {
-            num: num,
-            modulus: self.modulus,
-        }
-    }
-
-    pub fn scalar_mul(self, by: u32) -> Self {
-        let mut num: u32 = self.num;
-
-        if by == 0 {
-            num = 0;
-        } else if by > 1 {
-            for _ in 0..(by - 1) {
-                num = (num + self.num) % self.modulus;
-            }
-        }
-
-        Self {
-            num: num,
-            modulus: self.modulus,
-        }
     }
 
     #[allow(dead_code)]
@@ -112,6 +85,53 @@ impl Fp {
     }
 }
 
+impl Field for Fp {
+    fn pow(self, exponent: u32) -> Self {
+        let mut num: u32 = self.num;
+
+        for _ in 0..(exponent - 1) {
+            num = (num * self.num) % self.modulus;
+        }
+
+        Self {
+            num: num,
+            modulus: self.modulus,
+        }
+    }
+
+    fn mul_inverse(self) -> Self {
+        self.pow(self.modulus - 2)
+    }
+
+    fn add_inverse(self) -> Self {
+        Self {
+            num: self.modulus - self.num,
+            modulus: self.modulus,
+        }
+    }
+
+    fn is_zero(self) -> bool {
+        self.num == 0
+    }
+
+    fn scalar_mul(self, by: u32) -> Self {
+        let mut num: u32 = self.num;
+
+        if by == 0 {
+            num = 0;
+        } else if by > 1 {
+            for _ in 0..(by - 1) {
+                num = (num + self.num) % self.modulus;
+            }
+        }
+
+        Self {
+            num: num,
+            modulus: self.modulus,
+        }
+    }
+}
+
 impl fmt::Display for Fp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "• {} — 𝔽{}", self.num, self.modulus)
@@ -155,10 +175,7 @@ impl ops::Mul for Fp {
 
     // assumes `rhs` has the same MODULUS
     fn mul(self, rhs: Self) -> Self::Output {
-        Self {
-            num: (self.num * rhs.num) % self.modulus,
-            modulus: self.modulus,
-        }
+        self.scalar_mul(rhs.num)
     }
 }
 

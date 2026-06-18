@@ -1,7 +1,7 @@
 use std::{fmt, ops};
 
 use crate::{
-    exercises::finite_field::Fp,
+    exercises::{ec_point::Field, finite_field::Fp},
     extension_fields::{
         sq_root::has_root,
         utils::{gf, MODULUS},
@@ -26,17 +26,6 @@ impl Fp2 {
         Self { a: gf(a), b: gf(b) }
     }
 
-    pub fn mul_inverse(self) -> Self {
-        let beta = Self::select_quadratic_non_residue_beta();
-
-        let norm = (self.a * self.a) - (self.b * self.b * beta);
-
-        Self {
-            a: self.a / norm,
-            b: -self.b / norm,
-        }
-    }
-
     fn select_quadratic_non_residue_beta() -> Fp {
         for beta in 0..MODULUS {
             let specimen = gf(beta as i64);
@@ -47,6 +36,47 @@ impl Fp2 {
         }
 
         panic!("No quadratic non-residue found in Fq");
+    }
+}
+
+impl Field for Fp2 {
+    fn is_zero(self) -> bool {
+        self.a.is_zero() && self.b.is_zero()
+    }
+
+    fn pow(self, exponent: u32) -> Self {
+        let mut res: Fp2 = self.clone();
+
+        for _ in 0..(exponent - 1) {
+            res = res * self;
+        }
+
+        res
+    }
+
+    fn mul_inverse(self) -> Self {
+        let beta = Self::select_quadratic_non_residue_beta();
+
+        let norm = (self.a * self.a) - (self.b * self.b * beta);
+
+        Self {
+            a: self.a / norm,
+            b: -self.b / norm,
+        }
+    }
+
+    fn add_inverse(self) -> Self {
+        Self {
+            a: -self.a,
+            b: -self.b,
+        }
+    }
+
+    fn scalar_mul(self, by: u32) -> Self {
+        Self {
+            a: self.a.scalar_mul(by),
+            b: self.b.scalar_mul(by),
+        }
     }
 }
 

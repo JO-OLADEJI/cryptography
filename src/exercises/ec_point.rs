@@ -6,8 +6,8 @@
 // )__)  )(__  )(__  _)(_  )___/  )(   _)(_ ( (__      ( (__  )(__)(  )   / \  /  )__) \__ \
 // (____)(____)(____)(____)(__)   (__) (____) \___)      \___)(______)(_)\_)  \/  (____)(___/
 
-use crate::exercises::finite_field::Fp;
-use std::fmt;
+use std::fmt::Debug;
+use std::fmt::{self, Display};
 use std::ops;
 
 /* The general form of the curve is y² = x³ + ax + b, but more specifically the
@@ -17,26 +17,38 @@ use std::ops;
  * The `Point` struct contains details that satisfy the above equation (general form)
  * over a finite field. `x` and `y` being `None` represents the point at infinity
  */
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Point {
-    pub a: Fp,
-    pub b: Fp,
-    pub x: Option<Fp>,
-    pub y: Option<Fp>,
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Point<F> {
+    pub a: F,
+    pub b: F,
+    pub x: Option<F>,
+    pub y: Option<F>,
 }
 
-impl Point {
-    pub fn new(_a: Fp, _b: Fp, _x: Option<Fp>, _y: Option<Fp>) -> Result<Self, String> {
+pub trait Field:
+    Copy
+    + Clone
+    + Debug
+    + Display
+    + PartialEq
+    + std::ops::Add<Output = Self>
+    + std::ops::Sub<Output = Self>
+    + std::ops::Mul<Output = Self>
+    + std::ops::Div<Output = Self>
+    + std::ops::Neg<Output = Self>
+{
+    fn mul_inverse(self) -> Self;
+    fn pow(self, exp: u32) -> Self;
+    fn add_inverse(self) -> Self;
+    fn is_zero(self) -> bool;
+    fn scalar_mul(self, by: u32) -> Self;
+}
+
+impl<F: Field> Point<F> {
+    pub fn new(_a: F, _b: F, _x: Option<F>, _y: Option<F>) -> Result<Self, String> {
         match _x {
             Some(x_value) => match _y {
                 Some(y_value) => {
-                    if _a.modulus != _b.modulus
-                        || _b.modulus != x_value.modulus
-                        || x_value.modulus != y_value.modulus
-                    {
-                        return Err(format!("Cannot operate on different Fields"));
-                    }
-
                     let lhs = y_value.pow(2);
                     let rhs_0 = x_value.pow(3);
                     let rhs_1 = _a * x_value;
@@ -89,12 +101,13 @@ impl Point {
         product
     }
 
+    #[allow(dead_code)]
     pub fn is_infinity(self) -> bool {
         self.x.is_none() && self.y.is_none()
     }
 }
 
-impl ops::Add for Point {
+impl<F: Field> ops::Add for Point<F> {
     type Output = Result<Self, String>;
 
     fn add(self, point_2: Self) -> Self::Output {
@@ -102,7 +115,7 @@ impl ops::Add for Point {
             return Err(format!("Point addition invalid on different curves"));
         }
 
-        let slope: Fp;
+        let slope: F;
 
         /*
          * Case 1(a): first point is at infinity P₁ = P(∞)
@@ -116,13 +129,7 @@ impl ops::Add for Point {
                 self.a,
                 self.b,
                 point_2.x,
-                Some(
-                    Fp::new(
-                        (self.a.modulus - point_2.y.unwrap().num) as i64, // flip `y` on x-axis
-                        self.a.modulus,
-                    )
-                    .unwrap(),
-                ),
+                point_2.y.map(|y| y.add_inverse()),
             )
             .unwrap());
         }
@@ -135,19 +142,9 @@ impl ops::Add for Point {
             }
 
             // if the other point is on the curve, we flip the `y` value
-            return Ok(Point::new(
-                self.a,
-                self.b,
-                self.x,
-                Some(
-                    Fp::new(
-                        (self.a.modulus - self.y.unwrap().num) as i64, // flip `y` on x-axis
-                        self.a.modulus,
-                    )
-                    .unwrap(),
-                ),
-            )
-            .unwrap());
+            return Ok(
+                Point::new(self.a, self.b, self.x, self.y.map(|y| y.add_inverse())).unwrap(),
+            );
         }
 
         let x1_value = self.x.unwrap();
@@ -166,7 +163,7 @@ impl ops::Add for Point {
              * Case 2 (variant): same points where P₁ == P₂ and `y` = 0; `s` denominator results in zero
              * meaning slope is `undefined`. This results in P(∞)
              */
-            if self.y.unwrap().num == 0 {
+            if self.y.unwrap().is_zero() {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
@@ -186,7 +183,7 @@ impl ops::Add for Point {
              * Case 3 (variant) - if the two `x` points are equivalent and `y` points are negated, i.e point_a.x == point_b.x && point_a.y == -(point_b.y)
              * This results in the infinity point
              */
-            if self.x == point_2.x && (y1_value.num + y2_value.num) == self.a.modulus {
+            if self.x == point_2.x && (y1_value + y2_value).is_zero() {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
@@ -200,24 +197,20 @@ impl ops::Add for Point {
     }
 }
 
-impl fmt::Display for Point {
+impl<F: Field> fmt::Display for Point<F> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.x.is_none() && self.y.is_none() {
-            return write!(f, "• (∞, ∞) — F{}", self.x.unwrap().modulus);
+            return write!(f, "• (∞, ∞)");
         }
 
-        write!(
-            f,
-            "• ({}, {}) — F{}",
-            self.x.unwrap().num,
-            self.y.unwrap().num,
-            self.x.unwrap().modulus
-        )
+        write!(f, "• ({}, {})", self.x.unwrap(), self.y.unwrap(),)
     }
 }
 
 #[cfg(test)]
 mod ecc_tests {
+    use crate::exercises::finite_field::Fp;
+
     use super::*;
 
     const ORDER: u32 = 7;
@@ -244,17 +237,6 @@ mod ecc_tests {
         assert_eq!(
             Point::new(SECP256K1_A, SECP256K1_B, None, Some(y)),
             Err(format!("Invalid infinity point"))
-        );
-    }
-
-    #[test]
-    fn test_point_init_error_order() {
-        let x = Fp::new(0, ORDER_2).unwrap();
-        let y = Fp::new(0, ORDER_2).unwrap();
-
-        assert_eq!(
-            Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)),
-            Err(format!("Cannot operate on different Fields"))
         );
     }
 

@@ -1,6 +1,6 @@
 use std::u32;
 
-use crate::exercises::finite_field::Fp;
+use crate::exercises::{ec_point::Field, finite_field::Fp};
 
 pub const MODULUS: u32 = 157;
 pub const SUBGROUP_ORDER_R: u32 = 79;

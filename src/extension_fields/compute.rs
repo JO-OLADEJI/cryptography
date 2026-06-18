@@ -1,10 +1,13 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    exercises::ec_point::Point,
+    exercises::{
+        ec_point::{Field, Point},
+        finite_field::Fp,
+    },
     extension_fields::{
         field_extension::Fp2,
-        generator::{find_g1s, get_non_residue},
+        generator::find_g1s,
         sq_root::{has_root, tonelli_shanks},
         subgroup::embedding_degree,
         utils::{format_curve_equation, gf, prime_factors, MODULUS},
@@ -34,7 +37,7 @@ pub fn main() {
 
     let point_at_infinity = Point::new(gf(a), gf(b), None, None).unwrap();
 
-    let mut points: Vec<Point> = vec![];
+    let mut points: Vec<Point<Fp>> = vec![];
     points.push(point_at_infinity);
 
     println!("Curve: {}", format_curve_equation(a, b));
@@ -87,8 +90,6 @@ pub fn main() {
 
     let g1s = find_g1s(&points);
     println!("# generators found: {}", g1s.len());
-
-    println!("non-residue = {:?}", get_non_residue());
 
     println!("\n\n\n");
 }
