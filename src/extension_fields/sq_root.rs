@@ -1,8 +1,8 @@
-use crate::{exercises::finite_field::FieldElement, extension_fields::utils::gf};
+use crate::{exercises::finite_field::Fp, extension_fields::utils::gf};
 
 // Tonelli-Shanks algorithm - assumes field has a prime order
 // Returns Some(x) such that x^2 ≡ n (mod p), or None if no solution
-pub fn tonelli_shanks(specimen: &FieldElement) -> Option<u64> {
+pub fn tonelli_shanks(specimen: &Fp) -> Option<u64> {
     let n = specimen.num as u64;
     let p = specimen.modulus as u64;
 
@@ -64,7 +64,7 @@ pub fn tonelli_shanks(specimen: &FieldElement) -> Option<u64> {
     Some(r)
 }
 
-pub fn has_root(value: &FieldElement) -> bool {
+pub fn has_root(value: &Fp) -> bool {
     if *value == gf(0) {
         return true;
     }

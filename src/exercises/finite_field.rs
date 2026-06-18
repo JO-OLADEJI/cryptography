@@ -9,12 +9,12 @@ use std::fmt;
 use std::ops;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
-pub struct FieldElement {
+pub struct Fp {
     pub num: u32,
     pub modulus: u32,
 }
 
-impl FieldElement {
+impl Fp {
     pub fn new(_num: i64, _modulus: u32) -> Result<Self, String> {
         // TODO: handle `_modulus` errors
         if _modulus == 0 {
@@ -60,6 +60,7 @@ impl FieldElement {
         }
     }
 
+    #[allow(dead_code)]
     pub fn scalar_mul_fe(self, by: &Self) -> Self {
         self.scalar_mul(by.num)
     }
@@ -111,13 +112,13 @@ impl FieldElement {
     }
 }
 
-impl fmt::Display for FieldElement {
+impl fmt::Display for Fp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "FieldElement_ₚ{}({})", self.modulus, self.num)
+        write!(f, "• {} — 𝔽{}", self.num, self.modulus)
     }
 }
 
-impl ops::Add for FieldElement {
+impl ops::Add for Fp {
     type Output = Self;
 
     // assumes `rhs` has the same MODULUS
@@ -129,7 +130,7 @@ impl ops::Add for FieldElement {
     }
 }
 
-impl ops::Sub for FieldElement {
+impl ops::Sub for Fp {
     type Output = Self;
 
     // assumes `rhs` has the same MODULUS
@@ -149,7 +150,7 @@ impl ops::Sub for FieldElement {
     }
 }
 
-impl ops::Mul for FieldElement {
+impl ops::Mul for Fp {
     type Output = Self;
 
     // assumes `rhs` has the same MODULUS
@@ -161,7 +162,7 @@ impl ops::Mul for FieldElement {
     }
 }
 
-impl ops::Div for FieldElement {
+impl ops::Div for Fp {
     type Output = Self;
 
     // assumes `rhs` has the same MODULUS & is not ZERO
@@ -169,6 +170,21 @@ impl ops::Div for FieldElement {
         let rhs_inverse = rhs.pow(self.modulus - 2);
 
         self * rhs_inverse
+    }
+}
+
+impl ops::Neg for Fp {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        if self.num == 0 {
+            return self;
+        }
+
+        Self {
+            num: self.modulus - self.num,
+            modulus: self.modulus,
+        }
     }
 }
 
@@ -185,7 +201,7 @@ mod ff_tests {
         let num: i64 = PRIME as i64;
 
         assert_eq!(
-            FieldElement::new(num, ZERO),
+            Fp::new(num, ZERO),
             Err(format!("cannot define a finite field over modulus ZERO"))
         );
     }
@@ -195,8 +211,8 @@ mod ff_tests {
         let num: u32 = PRIME - 1;
 
         assert_eq!(
-            FieldElement::new(num as i64, PRIME),
-            Ok(FieldElement {
+            Fp::new(num as i64, PRIME),
+            Ok(Fp {
                 num,
                 modulus: PRIME
             })
@@ -205,8 +221,8 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_addition_error() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME_2).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME_2).unwrap();
 
         assert_eq!(
             a.safe_add(b),
@@ -216,12 +232,12 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_addition() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME).unwrap();
 
         assert_eq!(
             a + b,
-            FieldElement {
+            Fp {
                 num: 1,
                 modulus: PRIME
             }
@@ -230,8 +246,8 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_subtraction_error() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME_2).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME_2).unwrap();
 
         assert_eq!(
             a.safe_subtract(b),
@@ -243,12 +259,12 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_subtraction() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME).unwrap();
 
         assert_eq!(
             a - b,
-            FieldElement {
+            Fp {
                 num: 5,
                 modulus: PRIME
             }
@@ -257,8 +273,8 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_multiplication_error() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME_2).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME_2).unwrap();
 
         assert_eq!(
             a.safe_mul(b),
@@ -270,12 +286,12 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_multiplication() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME).unwrap();
 
         assert_eq!(
             a * b,
-            FieldElement {
+            Fp {
                 num: 1,
                 modulus: PRIME
             }
@@ -284,11 +300,11 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_scalar_multiplication() {
-        let a = FieldElement::new(3, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
 
         assert_eq!(
             a.scalar_mul(12),
-            FieldElement {
+            Fp {
                 num: 1,
                 modulus: PRIME
             }
@@ -297,12 +313,12 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_exponent() {
-        let a = FieldElement::new(3, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
         let exponent: u32 = 4;
 
         assert_eq!(
             a.pow(exponent),
-            FieldElement {
+            Fp {
                 num: 4,
                 modulus: PRIME
             }
@@ -311,8 +327,8 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_division_error() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME_2).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME_2).unwrap();
 
         assert_eq!(
             a.safe_div(b),
@@ -324,8 +340,8 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_division_error_zero() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let c = FieldElement::new(0, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let c = Fp::new(0, PRIME).unwrap();
 
         assert_eq!(
             a.safe_div(c),
@@ -335,12 +351,12 @@ mod ff_tests {
 
     #[test]
     fn test_field_element_division() {
-        let a = FieldElement::new(3, PRIME).unwrap();
-        let b = FieldElement::new(5, PRIME).unwrap();
+        let a = Fp::new(3, PRIME).unwrap();
+        let b = Fp::new(5, PRIME).unwrap();
 
         assert_eq!(
             a / b,
-            FieldElement {
+            Fp {
                 num: 2,
                 modulus: PRIME
             }

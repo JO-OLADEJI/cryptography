@@ -6,7 +6,7 @@
 // )__)  )(__  )(__  _)(_  )___/  )(   _)(_ ( (__      ( (__  )(__)(  )   / \  /  )__) \__ \
 // (____)(____)(____)(____)(__)   (__) (____) \___)      \___)(______)(_)\_)  \/  (____)(___/
 
-use crate::exercises::finite_field::FieldElement;
+use crate::exercises::finite_field::Fp;
 use std::fmt;
 use std::ops;
 
@@ -19,19 +19,14 @@ use std::ops;
  */
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Point {
-    pub a: FieldElement,
-    pub b: FieldElement,
-    pub x: Option<FieldElement>,
-    pub y: Option<FieldElement>,
+    pub a: Fp,
+    pub b: Fp,
+    pub x: Option<Fp>,
+    pub y: Option<Fp>,
 }
 
 impl Point {
-    pub fn new(
-        _a: FieldElement,
-        _b: FieldElement,
-        _x: Option<FieldElement>,
-        _y: Option<FieldElement>,
-    ) -> Result<Self, String> {
+    pub fn new(_a: Fp, _b: Fp, _x: Option<Fp>, _y: Option<Fp>) -> Result<Self, String> {
         match _x {
             Some(x_value) => match _y {
                 Some(y_value) => {
@@ -93,6 +88,10 @@ impl Point {
 
         product
     }
+
+    pub fn is_infinity(self) -> bool {
+        self.x.is_none() && self.y.is_none()
+    }
 }
 
 impl ops::Add for Point {
@@ -103,13 +102,13 @@ impl ops::Add for Point {
             return Err(format!("Point addition invalid on different curves"));
         }
 
-        let slope: FieldElement;
+        let slope: Fp;
 
         /*
          * Case 1(a): first point is at infinity P₁ = P(∞)
          */
-        if self.x == None && self.y == None {
-            if point_2.x == None && point_2.y == None {
+        if self.x.is_none() && self.y.is_none() {
+            if point_2.x.is_none() && point_2.y.is_none() {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
@@ -118,7 +117,7 @@ impl ops::Add for Point {
                 self.b,
                 point_2.x,
                 Some(
-                    FieldElement::new(
+                    Fp::new(
                         (self.a.modulus - point_2.y.unwrap().num) as i64, // flip `y` on x-axis
                         self.a.modulus,
                     )
@@ -130,8 +129,8 @@ impl ops::Add for Point {
         /*
          * Case 1(b): second point is at infinity P₂ = P(∞)
          */
-        else if point_2.x == None && point_2.y == None {
-            if self.x == None && self.y == None {
+        else if point_2.x.is_none() && point_2.y.is_none() {
+            if self.x.is_none() && self.y.is_none() {
                 return Ok(Point::new(self.a, self.b, None, None).unwrap());
             }
 
@@ -141,7 +140,7 @@ impl ops::Add for Point {
                 self.b,
                 self.x,
                 Some(
-                    FieldElement::new(
+                    Fp::new(
                         (self.a.modulus - self.y.unwrap().num) as i64, // flip `y` on x-axis
                         self.a.modulus,
                     )
@@ -203,17 +202,16 @@ impl ops::Add for Point {
 
 impl fmt::Display for Point {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if self.x == None && self.y == None {
-            return write!(f, "Point(∞)_a{}_b{}", self.a, self.b);
+        if self.x.is_none() && self.y.is_none() {
+            return write!(f, "• (∞, ∞) — F{}", self.x.unwrap().modulus);
         }
 
         write!(
             f,
-            "Point({}, {})_a{}_b{}",
+            "• ({}, {}) — F{}",
             self.x.unwrap().num,
             self.y.unwrap().num,
-            self.a,
-            self.b
+            self.x.unwrap().modulus
         )
     }
 }
@@ -225,19 +223,19 @@ mod ecc_tests {
     const ORDER: u32 = 7;
     const ORDER_2: u32 = 11;
 
-    const SECP256K1_A: FieldElement = FieldElement {
+    const SECP256K1_A: Fp = Fp {
         num: 0,
         modulus: ORDER,
     };
-    const SECP256K1_B: FieldElement = FieldElement {
+    const SECP256K1_B: Fp = Fp {
         num: 7 % ORDER,
         modulus: ORDER,
     };
 
     #[test]
     fn test_point_init_error_infinity() {
-        let x = FieldElement::new(0, ORDER_2).unwrap();
-        let y = FieldElement::new(0, ORDER_2).unwrap();
+        let x = Fp::new(0, ORDER_2).unwrap();
+        let y = Fp::new(0, ORDER_2).unwrap();
 
         assert_eq!(
             Point::new(SECP256K1_A, SECP256K1_B, Some(x), None),
@@ -251,8 +249,8 @@ mod ecc_tests {
 
     #[test]
     fn test_point_init_error_order() {
-        let x = FieldElement::new(0, ORDER_2).unwrap();
-        let y = FieldElement::new(0, ORDER_2).unwrap();
+        let x = Fp::new(0, ORDER_2).unwrap();
+        let y = Fp::new(0, ORDER_2).unwrap();
 
         assert_eq!(
             Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)),
@@ -262,8 +260,8 @@ mod ecc_tests {
 
     #[test]
     fn test_point_init_error() {
-        let x = FieldElement::new(0, ORDER).unwrap();
-        let y = FieldElement::new(1, ORDER).unwrap();
+        let x = Fp::new(0, ORDER).unwrap();
+        let y = Fp::new(1, ORDER).unwrap();
 
         assert_eq!(
             Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)),
@@ -273,8 +271,8 @@ mod ecc_tests {
 
     #[test]
     fn test_point_init() {
-        let x = FieldElement::new(0, ORDER).unwrap();
-        let y = FieldElement::new(0, ORDER).unwrap();
+        let x = Fp::new(0, ORDER).unwrap();
+        let y = Fp::new(0, ORDER).unwrap();
 
         assert_eq!(
             Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)),
@@ -305,12 +303,12 @@ mod ecc_tests {
 
     #[test]
     fn test_point_addition_distinct() {
-        let x1 = FieldElement::new(1, ORDER).unwrap();
-        let y1 = FieldElement::new(6, ORDER).unwrap();
+        let x1 = Fp::new(1, ORDER).unwrap();
+        let y1 = Fp::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x1), Some(y1)).unwrap();
 
-        let x2 = FieldElement::new(2, ORDER).unwrap();
-        let y2 = FieldElement::new(1, ORDER).unwrap();
+        let x2 = Fp::new(2, ORDER).unwrap();
+        let y2 = Fp::new(1, ORDER).unwrap();
         let point_b = Point::new(SECP256K1_A, SECP256K1_B, Some(x2), Some(y2)).unwrap();
 
         assert_eq!(
@@ -318,16 +316,16 @@ mod ecc_tests {
             Ok(Point {
                 a: SECP256K1_A,
                 b: SECP256K1_B,
-                x: Some(FieldElement::new(1, ORDER).unwrap()),
-                y: Some(FieldElement::new(1, ORDER).unwrap()),
+                x: Some(Fp::new(1, ORDER).unwrap()),
+                y: Some(Fp::new(1, ORDER).unwrap()),
             })
         )
     }
 
     #[test]
     fn test_point_addition_equal() {
-        let x = FieldElement::new(1, ORDER).unwrap();
-        let y = FieldElement::new(6, ORDER).unwrap();
+        let x = Fp::new(1, ORDER).unwrap();
+        let y = Fp::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)).unwrap();
 
         println!("{:?}", point_a + point_a);
@@ -337,16 +335,16 @@ mod ecc_tests {
             Ok(Point {
                 a: SECP256K1_A,
                 b: SECP256K1_B,
-                x: Some(FieldElement::new(2, ORDER).unwrap()),
-                y: Some(FieldElement::new(6, ORDER).unwrap()),
+                x: Some(Fp::new(2, ORDER).unwrap()),
+                y: Some(Fp::new(6, ORDER).unwrap()),
             })
         )
     }
 
     #[test]
     fn test_point_addition_equal_vertical_line() {
-        let x = FieldElement::new(0, ORDER).unwrap();
-        let y = FieldElement::new(0, ORDER).unwrap();
+        let x = Fp::new(0, ORDER).unwrap();
+        let y = Fp::new(0, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)).unwrap();
 
         assert_eq!(
@@ -383,12 +381,12 @@ mod ecc_tests {
         let y = None;
         let point_infinity = Point::new(SECP256K1_A, SECP256K1_B, x, y).unwrap();
 
-        let x1 = FieldElement::new(1, ORDER).unwrap();
-        let y1 = FieldElement::new(6, ORDER).unwrap();
+        let x1 = Fp::new(1, ORDER).unwrap();
+        let y1 = Fp::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x1), Some(y1)).unwrap();
 
-        let x2 = FieldElement::new(4, ORDER).unwrap();
-        let y2 = FieldElement::new(1, ORDER).unwrap();
+        let x2 = Fp::new(4, ORDER).unwrap();
+        let y2 = Fp::new(1, ORDER).unwrap();
         let point_b = Point::new(SECP256K1_A, SECP256K1_B, Some(x2), Some(y2)).unwrap();
 
         assert_eq!(
@@ -396,8 +394,8 @@ mod ecc_tests {
             Ok(Point {
                 a: SECP256K1_A,
                 b: SECP256K1_B,
-                x: Some(FieldElement::new(1, ORDER).unwrap()),
-                y: Some(FieldElement::new(1, ORDER).unwrap()),
+                x: Some(Fp::new(1, ORDER).unwrap()),
+                y: Some(Fp::new(1, ORDER).unwrap()),
             })
         );
 
@@ -406,20 +404,20 @@ mod ecc_tests {
             Ok(Point {
                 a: SECP256K1_A,
                 b: SECP256K1_B,
-                x: Some(FieldElement::new(4, ORDER).unwrap()),
-                y: Some(FieldElement::new(6, ORDER).unwrap()),
+                x: Some(Fp::new(4, ORDER).unwrap()),
+                y: Some(Fp::new(6, ORDER).unwrap()),
             })
         );
     }
 
     #[test]
     fn test_point_addition_identity_variation() {
-        let x1 = FieldElement::new(1, ORDER).unwrap();
-        let y1 = FieldElement::new(6, ORDER).unwrap();
+        let x1 = Fp::new(1, ORDER).unwrap();
+        let y1 = Fp::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x1), Some(y1)).unwrap();
 
-        let x2 = FieldElement::new(1, ORDER).unwrap();
-        let y2 = FieldElement::new(1, ORDER).unwrap();
+        let x2 = Fp::new(1, ORDER).unwrap();
+        let y2 = Fp::new(1, ORDER).unwrap();
         let point_b = Point::new(SECP256K1_A, SECP256K1_B, Some(x2), Some(y2)).unwrap();
 
         assert_eq!(
@@ -435,8 +433,8 @@ mod ecc_tests {
 
     #[test]
     fn test_scalar_multiplication() {
-        let x = FieldElement::new(1, ORDER).unwrap();
-        let y = FieldElement::new(6, ORDER).unwrap();
+        let x = Fp::new(1, ORDER).unwrap();
+        let y = Fp::new(6, ORDER).unwrap();
         let point_a = Point::new(SECP256K1_A, SECP256K1_B, Some(x), Some(y)).unwrap();
 
         assert_eq!(
@@ -444,8 +442,8 @@ mod ecc_tests {
             Point {
                 a: SECP256K1_A,
                 b: SECP256K1_B,
-                x: Some(FieldElement::new(2, ORDER).unwrap()),
-                y: Some(FieldElement::new(1, ORDER).unwrap()),
+                x: Some(Fp::new(2, ORDER).unwrap()),
+                y: Some(Fp::new(1, ORDER).unwrap()),
             }
         );
     }

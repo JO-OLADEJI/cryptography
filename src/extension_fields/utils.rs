@@ -1,10 +1,11 @@
 use std::u32;
 
-use crate::exercises::finite_field::FieldElement;
+use crate::exercises::finite_field::Fp;
 
 pub const MODULUS: u32 = 157;
+pub const SUBGROUP_ORDER_R: u32 = 79;
 
-pub const SEARCH_SPACE: (i64, i64) = (-10, 10);
+pub const SEARCH_SPACE: (i64, i64) = (-1, 0);
 
 const FIRST_100_PRIMES: [u32; 100] = [
     2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
@@ -14,8 +15,8 @@ const FIRST_100_PRIMES: [u32; 100] = [
     431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
 ];
 
-pub fn gf(value: i64) -> FieldElement {
-    FieldElement::new(value, MODULUS).unwrap()
+pub fn gf(value: i64) -> Fp {
+    Fp::new(value, MODULUS).unwrap()
 }
 
 pub fn format_curve_equation(a: i64, b: i64) -> String {
