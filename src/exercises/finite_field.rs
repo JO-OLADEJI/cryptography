@@ -9,7 +9,6 @@ use std::fmt;
 use std::ops;
 
 use crate::exercises::ec_point::Field;
-use crate::extension_fields::utils::gf;
 
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct Fp {
@@ -134,7 +133,7 @@ impl Field for Fp {
 
 impl fmt::Display for Fp {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "• {} — 𝔽{}", self.num, self.modulus)
+        write!(f, "{} — 𝔽{}", self.num, self.modulus)
     }
 }
 

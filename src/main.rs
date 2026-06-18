@@ -5,7 +5,7 @@ fn main() {
     // let a = FieldElement::new(2, MODULUS).unwrap();
     // let b = FieldElement::new(3, MODULUS).unwrap();
 
-    extension_fields::compute::prototype();
+    extension_fields::compute::main();
 
     // • (3, 6)
     // let potential_g = Point::new(

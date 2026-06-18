@@ -10,7 +10,7 @@ use crate::{
         generator::find_g1s,
         sq_root::{has_root, tonelli_shanks},
         subgroup::embedding_degree,
-        utils::{format_curve_equation, gf, prime_factors, MODULUS},
+        utils::{format_curve_equation, gf, prime_factors, MODULUS, SUBGROUP_ORDER_R},
     },
 };
 
@@ -89,19 +89,36 @@ pub fn main() {
     println!("embedding degrees: {:?}", key);
 
     let g1s = find_g1s(&points);
+    println!("{}", g1s[12]);
     println!("# generators found: {}", g1s.len());
 
     println!("\n\n\n");
 }
 
 pub fn prototype() {
-    let x = Fp2::new(-1, 1);
-    let y = Fp2::new(5, 3);
+    let mut field_elements: Vec<Fp2> = vec![];
 
-    // let sum = x + y;
-    let product = x * y;
-    let inverse = product.mul_inverse();
+    for a in 0..MODULUS {
+        for b in 0..MODULUS {
+            let arbitrary_point = Fp2::new(a.into(), b.into());
+            field_elements.push(arbitrary_point);
+        }
+    }
 
-    println!("product {}", product);
-    println!("inverse {}", inverse);
+    for x in field_elements[5000..10000].iter() {
+        for y in field_elements.iter() {
+            let point = Point::new(Fp2::new(-1, 0), Fp2::new(-1, 0), Some(*x), Some(*y));
+            if point.is_ok()
+                && !point.clone().unwrap().is_infinity()
+                && point
+                    .clone()
+                    .unwrap()
+                    .scalar_mul(SUBGROUP_ORDER_R)
+                    .is_infinity()
+            {
+                println!("G2 {}", point.unwrap());
+                return;
+            }
+        }
+    }
 }

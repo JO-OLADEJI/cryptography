@@ -93,11 +93,7 @@ impl ops::Add for Fp2 {
 
 impl fmt::Display for Fp2 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "• {} + {}α — 𝔽{}",
-            self.a.num, self.b.num, self.a.modulus
-        )
+        write!(f, "{} + {}α — 𝔽{}²", self.a.num, self.b.num, self.a.modulus)
     }
 }
 
