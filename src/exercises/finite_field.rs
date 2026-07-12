@@ -86,9 +86,10 @@ impl Fp {
 
 impl Field for Fp {
     fn pow(self, exponent: u32) -> Self {
+        let normalized_exponent = exponent % self.modulus;
         let mut num: u32 = self.num;
 
-        for _ in 0..(exponent - 1) {
+        for _ in 0..(normalized_exponent - 1) {
             num = (num * self.num) % self.modulus;
         }
 
@@ -339,6 +340,18 @@ mod ff_tests {
                 modulus: PRIME
             }
         );
+    }
+
+    #[test]
+    fn test_field_element_exponent_overflow() {
+        let a = Fp::new(3, PRIME).unwrap();
+        let exponent: u32 = 12;
+        let normalized_exponent = 12 % PRIME;
+
+        let computed_power = a.pow(exponent);
+        let expected_power = a.pow(normalized_exponent);
+
+        assert_eq!(computed_power, expected_power);
     }
 
     #[test]
