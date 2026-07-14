@@ -39,6 +39,7 @@ pub trait Field:
 {
     fn zero(modulus: u32) -> Self;
     fn one(modulus: u32) -> Self;
+    fn modulus(&self) -> u32;
     fn mul_inverse(self) -> Self;
     fn pow(self, exp: u32) -> Self;
     fn add_inverse(self) -> Self;

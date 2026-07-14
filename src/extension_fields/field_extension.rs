@@ -49,6 +49,10 @@ impl Field for Fp2 {
         Self::new(1, 0)
     }
 
+    fn modulus(&self) -> u32 {
+        self.a.modulus
+    }
+
     fn is_zero(self) -> bool {
         self.a.is_zero() && self.b.is_zero()
     }

@@ -93,6 +93,10 @@ impl Field for Fp {
         Self::new(1, modulus).unwrap()
     }
 
+    fn modulus(&self) -> u32 {
+        self.modulus
+    }
+
     fn pow(self, exponent: u32) -> Self {
         let normalized_exponent = exponent % self.modulus;
         let mut num: u32 = self.num;
