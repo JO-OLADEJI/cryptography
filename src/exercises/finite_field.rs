@@ -85,12 +85,12 @@ impl Fp {
 }
 
 impl Field for Fp {
-    fn zero(exponent: u32) -> Self {
-        Self::new(0, exponent).unwrap()
+    fn zero(modulus: u32) -> Self {
+        Self::new(0, modulus).unwrap()
     }
 
-    fn one(exponent: u32) -> Self {
-        Self::new(1, exponent).unwrap()
+    fn one(modulus: u32) -> Self {
+        Self::new(1, modulus).unwrap()
     }
 
     fn pow(self, exponent: u32) -> Self {

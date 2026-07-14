@@ -41,11 +41,11 @@ impl Fp2 {
 }
 
 impl Field for Fp2 {
-    fn zero(exponent: u32) -> Self {
+    fn zero(modulus: u32) -> Self {
         Self::new(0, 0)
     }
 
-    fn one(exponent: u32) -> Self {
+    fn one(modulus: u32) -> Self {
         Self::new(1, 0)
     }
 
