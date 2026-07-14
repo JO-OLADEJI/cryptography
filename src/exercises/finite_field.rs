@@ -101,6 +101,13 @@ impl Field for Fp {
         let normalized_exponent = exponent % self.modulus;
         let mut num: u32 = self.num;
 
+        if exponent == 0 {
+            return Self {
+                num: 1,
+                modulus: self.modulus,
+            };
+        }
+
         for _ in 0..(normalized_exponent - 1) {
             num = (num * self.num) % self.modulus;
         }
@@ -349,6 +356,34 @@ mod ff_tests {
             a.pow(exponent),
             Fp {
                 num: 4,
+                modulus: PRIME
+            }
+        );
+    }
+
+    #[test]
+    fn test_field_element_zero_exponent() {
+        let a = Fp::new(4, PRIME).unwrap();
+        let exponent: u32 = 0;
+
+        assert_eq!(
+            a.pow(exponent),
+            Fp {
+                num: 1,
+                modulus: PRIME
+            }
+        );
+    }
+
+    #[test]
+    fn test_field_element_one_exponent() {
+        let a = Fp::new(6, PRIME).unwrap();
+        let exponent: u32 = 1;
+
+        assert_eq!(
+            a.pow(exponent),
+            Fp {
+                num: 6,
                 modulus: PRIME
             }
         );
