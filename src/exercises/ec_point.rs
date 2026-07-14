@@ -37,6 +37,9 @@ pub trait Field:
     + std::ops::Div<Output = Self>
     + std::ops::Neg<Output = Self>
 {
+    fn zero(exponent: u32) -> Self;
+    fn one(exponent: u32) -> Self;
+
     fn mul_inverse(self) -> Self;
     fn pow(self, exp: u32) -> Self;
     fn add_inverse(self) -> Self;

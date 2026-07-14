@@ -21,6 +21,7 @@ pub struct Fp2 {
     pub b: Fp,
 }
 
+// Bug.... `gf()` should not use global `MODULUS`
 impl Fp2 {
     pub fn new(a: i64, b: i64) -> Self {
         Self { a: gf(a), b: gf(b) }
@@ -40,6 +41,14 @@ impl Fp2 {
 }
 
 impl Field for Fp2 {
+    fn zero(exponent: u32) -> Self {
+        Self::new(0, 0)
+    }
+
+    fn one(exponent: u32) -> Self {
+        Self::new(1, 0)
+    }
+
     fn is_zero(self) -> bool {
         self.a.is_zero() && self.b.is_zero()
     }
